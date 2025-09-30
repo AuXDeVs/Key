@@ -62,6 +62,13 @@
         .hidden {
             display: none;
         }
+        .success {
+            background: #113311;
+            border: 1px solid #116611;
+            padding: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -75,6 +82,7 @@
         </div>
 
         <div class="box hidden" id="step2">
+            <div class="success">Verification Complete</div>
             <h2>Step 2: Get Keys</h2>
             <button class="btn" onclick="getKeys()">Load Keys</button>
             <div id="keysList"></div>
@@ -84,12 +92,21 @@
     <script>
         const PLATOBOOST = 'YOUR_PLATOBOOST_LINK_HERE';
         
-        function openLink() {
-            window.open(PLATOBOOST, '_blank');
-            setTimeout(() => {
+        // Check if user was redirected back from Platoboost
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const verified = urlParams.get('verified');
+            const token = urlParams.get('token');
+            
+            if (verified === 'true' || token) {
+                // User completed Platoboost
                 document.getElementById('step1').classList.add('hidden');
                 document.getElementById('step2').classList.remove('hidden');
-            }, 3000);
+            }
+        }
+        
+        function openLink() {
+            window.open(PLATOBOOST, '_blank');
         }
 
         async function getKeys() {
