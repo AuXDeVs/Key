@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/verify",
+      "destination": "/verify.html"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },
