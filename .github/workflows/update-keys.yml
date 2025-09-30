@@ -1,0 +1,32 @@
+name: Update Keys Daily
+
+on:
+  schedule:
+    # Runs every day at 12:00 AM UTC (24 hours)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-keys:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Generate new keys
+        run: |
+          node update-keys.js
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add api/getkey.js api/validate.js
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update keys [$(date +'%Y-%m-%d %H:%M:%S')]"
+          git push
