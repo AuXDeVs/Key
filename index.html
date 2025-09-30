@@ -64,22 +64,12 @@
             cursor: pointer;
             font-size: 14px;
         }
-        .copy-btn:hover {
-            background: #ddd;
-        }
         .hidden {
             display: none;
         }
         .success {
             background: #113311;
             border: 1px solid #116611;
-            padding: 10px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .error {
-            background: #331111;
-            border: 1px solid #661111;
             padding: 10px;
             margin-bottom: 15px;
             text-align: center;
@@ -102,20 +92,15 @@
             <button class="btn" onclick="getKey()">Generate My Key</button>
             <div id="keyDisplay"></div>
         </div>
-
-        <div class="box hidden" id="error">
-            <div class="error">Error: Complete verification first</div>
-            <button class="btn" onclick="location.reload()">Try Again</button>
-        </div>
     </div>
 
     <script>
-        const LOOTLINK = 'https://loot-link.com/s?R27uhHty';
+        const LOOTLINK = 'https://loot-link.com/s?TSdeerGk';
         let sessionToken = null;
         
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
-            sessionToken = urlParams.get('session');
+            sessionToken = urlParams.get('session') || sessionStorage.getItem('keySession');
             
             if (sessionToken) {
                 document.getElementById('step1').classList.add('hidden');
@@ -129,23 +114,29 @@
 
         async function getKey() {
             if (!sessionToken) {
-                document.getElementById('step2').classList.add('hidden');
-                document.getElementById('error').classList.remove('hidden');
+                alert('Please complete verification first');
+                location.reload();
                 return;
             }
 
             try {
-                const response = await fetch(`/api/keys/getkey?session=${sessionToken}`);
+                const response = await fetch(`/api/keys?session=${sessionToken}`);
                 const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    if (data.redirect) {
+                        sessionStorage.removeItem('keySession');
+                        location.reload();
+                    }
+                    return;
+                }
                 
                 if (data.key) {
                     displayKey(data.key);
-                } else {
-                    throw new Error('No key received');
                 }
             } catch (error) {
-                document.getElementById('step2').classList.add('hidden');
-                document.getElementById('error').classList.remove('hidden');
+                alert('Error loading key. Please try again.');
             }
         }
 
