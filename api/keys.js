@@ -2,8 +2,8 @@ const crypto = require('crypto');
 
 let keys = [];
 let lastUpdate = 0;
-let usedKeys = new Set(); // Track used keys
-let userSessions = new Map(); // Track users who got keys
+let usedKeys = new Set();
+let userSessions = new Map();
 
 function generateKeys() {
     keys = [];
@@ -18,7 +18,7 @@ generateKeys();
 function getRandomKey() {
     const availableKeys = keys.filter(k => !usedKeys.has(k));
     if (availableKeys.length === 0) {
-        generateKeys(); // Refresh if all used
+        generateKeys();
         return keys[0];
     }
     return availableKeys[Math.floor(Math.random() * availableKeys.length)];
@@ -38,42 +38,23 @@ export default function handler(req, res) {
         userSessions.clear();
     }
 
-    // Verify endpoint - Called by Lootlink redirect
-    if (req.url.includes('/verify')) {
-        const r = req.query.r; // Lootlink sends this
-        
-        if (!r || r.length < 10) {
-            return res.status(400).json({ error: 'Invalid verification' });
-        }
-        
-        // Generate session token
-        const sessionToken = crypto.randomBytes(32).toString('hex');
-        userSessions.set(sessionToken, {
-            verified: true,
-            timestamp: now,
-            key: null
-        });
-        
-        // Redirect back to site with session token
-        return res.redirect(`/?session=${sessionToken}`);
-    }
-
     // Get single key - Requires valid session
-    if (req.method === 'GET' && req.url.includes('/getkey')) {
+    if (req.method === 'GET' && !req.url.includes('/roblox')) {
         const session = req.query.session;
         
         if (!session || !userSessions.has(session)) {
-            return res.status(403).json({ error: 'Complete verification first' });
+            return res.status(403).json({ 
+                error: 'Complete verification first',
+                redirect: true 
+            });
         }
         
         const userData = userSessions.get(session);
         
-        // Check if user already got a key
         if (userData.key) {
             return res.json({ key: userData.key });
         }
         
-        // Give user 1 random key
         const key = getRandomKey();
         userData.key = key;
         usedKeys.add(key);
@@ -81,7 +62,7 @@ export default function handler(req, res) {
         return res.json({ key: key });
     }
 
-    // Roblox endpoint - Returns all keys (for validation)
+    // Roblox endpoint
     if (req.url.includes('/roblox')) {
         return res.json({
             keys: keys,
