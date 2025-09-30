@@ -42,6 +42,11 @@
         .btn:hover {
             background: #ddd;
         }
+        .btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
         .key-display {
             background: #1a1a1a;
             padding: 20px;
@@ -74,6 +79,17 @@
             margin-bottom: 15px;
             text-align: center;
         }
+        .error {
+            background: #331111;
+            border: 1px solid #661111;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .loading {
+            text-align: center;
+            color: #999;
+        }
     </style>
 </head>
 <body>
@@ -89,20 +105,32 @@
         <div class="box hidden" id="step2">
             <div class="success">Verification Complete</div>
             <h2>Your Key</h2>
-            <button class="btn" onclick="getKey()">Generate My Key</button>
+            <button class="btn" id="getKeyBtn" onclick="getKey()">Generate My Key</button>
             <div id="keyDisplay"></div>
+        </div>
+
+        <div class="box hidden" id="errorBox">
+            <div class="error" id="errorMsg">Error occurred</div>
+            <button class="btn" onclick="location.href='/'">Try Again</button>
         </div>
     </div>
 
     <script>
-        const LOOTLINK = 'https://loot-link.com/s?HRWRuuyw';
+        const LOOTLINK = 'https://loot-link.com/s?TSdeerGk';
         let sessionToken = null;
         
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
-            sessionToken = urlParams.get('session') || sessionStorage.getItem('keySession');
+            sessionToken = urlParams.get('session');
+            const error = urlParams.get('error');
+            
+            if (error) {
+                showError('Verification failed. Please try again.');
+                return;
+            }
             
             if (sessionToken) {
+                console.log('Session found:', sessionToken.substring(0, 10) + '...');
                 document.getElementById('step1').classList.add('hidden');
                 document.getElementById('step2').classList.remove('hidden');
             }
@@ -114,29 +142,38 @@
 
         async function getKey() {
             if (!sessionToken) {
-                alert('Please complete verification first');
-                location.reload();
+                showError('No session found. Please complete verification.');
                 return;
             }
 
+            const btn = document.getElementById('getKeyBtn');
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+
             try {
+                console.log('Fetching key with session:', sessionToken.substring(0, 10) + '...');
+                
                 const response = await fetch(`/api/keys?session=${sessionToken}`);
                 const data = await response.json();
                 
+                console.log('Response:', data);
+                
                 if (data.error) {
-                    alert(data.error);
-                    if (data.redirect) {
-                        sessionStorage.removeItem('keySession');
-                        location.reload();
-                    }
+                    showError(data.message || data.error);
                     return;
                 }
                 
                 if (data.key) {
                     displayKey(data.key);
+                } else {
+                    showError('No key received. Please try again.');
                 }
             } catch (error) {
-                alert('Error loading key. Please try again.');
+                console.error('Error:', error);
+                showError('Network error. Please check your connection.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate My Key';
             }
         }
 
@@ -152,6 +189,13 @@
                     </p>
                 </div>
             `;
+        }
+
+        function showError(message) {
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('errorBox').classList.remove('hidden');
+            document.getElementById('errorMsg').textContent = message;
         }
 
         function copy(key, btn) {
