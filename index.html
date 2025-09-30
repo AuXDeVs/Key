@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Key System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .box {
+            background: #111;
+            border: 1px solid #333;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #ddd;
+        }
+        .key-item {
+            background: #1a1a1a;
+            padding: 12px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .key-text {
+            font-family: monospace;
+        }
+        .copy-btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Key System</h1>
+
+        <div class="box" id="step1">
+            <h2>Step 1: Complete Task</h2>
+            <p>Complete the Platoboost link to continue</p>
+            <button class="btn" onclick="openLink()">Complete Task</button>
+        </div>
+
+        <div class="box hidden" id="step2">
+            <h2>Step 2: Get Keys</h2>
+            <button class="btn" onclick="getKeys()">Load Keys</button>
+            <div id="keysList"></div>
+        </div>
+    </div>
+
+    <script>
+        const PLATOBOOST = 'YOUR_PLATOBOOST_LINK_HERE';
+        
+        function openLink() {
+            window.open(PLATOBOOST, '_blank');
+            setTimeout(() => {
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+            }, 3000);
+        }
+
+        async function getKeys() {
+            const response = await fetch('/api/keys');
+            const data = await response.json();
+            
+            const list = document.getElementById('keysList');
+            list.innerHTML = '<h3 style="margin: 20px 0;">Available Keys:</h3>';
+            
+            data.keys.forEach(key => {
+                const div = document.createElement('div');
+                div.className = 'key-item';
+                div.innerHTML = `
+                    <span class="key-text">${key}</span>
+                    <button class="copy-btn" onclick="copy('${key}', this)">Copy</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function copy(key, btn) {
+            navigator.clipboard.writeText(key);
+            btn.textContent = 'Copied';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+        }
+    </script>
+</body>
+</html>
